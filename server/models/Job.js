@@ -1,0 +1,53 @@
+import mongoose from "mongoose";
+
+const JobSchema = new mongoose.Schema(
+  {
+    title: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    company: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    location: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    salary: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    experience: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    skills: {
+      type: [String],
+      default: [],
+    },
+    description: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    sourceUrl: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    parsedAt: {
+      type: Date,
+      default: Date.now,
+    },
+  },
+  { timestamps: true }
+);
+
+// Prevent mongoose model compiled error
+export default mongoose.models.Job || mongoose.model("Job", JobSchema);
