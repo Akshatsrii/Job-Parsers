@@ -55,11 +55,13 @@ export default function UrlForm() {
           onChange={(e) => setPages(e.target.value)}
           className="rounded-lg border border-gray-200 bg-white py-1 px-2 text-xs font-medium text-gray-700 shadow-sm focus:border-teal-500 focus:outline-none"
         >
-          <option value="1">1 Page</option>
-          <option value="2">2 Pages</option>
-          <option value="3">3 Pages</option>
-          <option value="5">5 Pages</option>
-          <option value="10">10 Pages (Max)</option>
+          <option value="1">1 Page (20 items)</option>
+          <option value="3">3 Pages (60 items)</option>
+          <option value="5">5 Pages (100 items)</option>
+          <option value="10">10 Pages (200 items)</option>
+          <option value="20">20 Pages (400 items)</option>
+          <option value="30">30 Pages (600 items)</option>
+          <option value="50">50 Pages (1000 items - Max)</option>
         </select>
       </div>
     </form>

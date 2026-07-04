@@ -20,7 +20,7 @@ export async function parseUrl(req, res, next) {
     let jobData = await parseJob(url);
 
     // Support paginated scraping for lists (jobs or companies)
-    const numPages = Math.min(Math.max(parseInt(pages) || 1, 1), 10);
+    const numPages = Math.min(Math.max(parseInt(pages) || 1, 1), 50);
     if (numPages > 1 && (jobData.isJobList || jobData.isCompanyList)) {
       try {
         const urlObj = new URL(url);
