@@ -36,6 +36,13 @@ export async function parseUrl(req, res, next) {
       isJobList: true,
       jobs: jobData.jobs,
       sourceUrl: url,
+    } : jobData.isCompanyList ? {
+      title: `Company List: ${jobData.companies.length} companies found`,
+      company: getSourceName(url),
+      description: `Extracted ${jobData.companies.length} companies from the listing URL.`,
+      isCompanyList: true,
+      companies: jobData.companies,
+      sourceUrl: url,
     } : {
       ...jobData,
       sourceUrl: url,

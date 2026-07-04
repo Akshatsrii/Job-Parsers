@@ -35,9 +35,9 @@ export async function parseJob(url) {
       console.log("🔍 [Level 1] Executing extractor...");
       rawData = extractor(html);
 
-      // If it is a job list, return immediately
-      if (rawData && rawData.isJobList) {
-        console.log("✅ [Level 1] Job list extraction successful!");
+      // If it is a job list or company list, return immediately
+      if (rawData && (rawData.isJobList || rawData.isCompanyList)) {
+        console.log("✅ [Level 1] List extraction successful!");
         return rawData;
       }
 
@@ -70,9 +70,9 @@ export async function parseJob(url) {
       ...dynamicData,
     };
 
-    // If it is a job list, return immediately
-    if (rawData && rawData.isJobList) {
-      console.log("✅ [Level 2] Job list extraction successful!");
+    // If it is a job list or company list, return immediately
+    if (rawData && (rawData.isJobList || rawData.isCompanyList)) {
+      console.log("✅ [Level 2] List extraction successful!");
       return rawData;
     }
 

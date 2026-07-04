@@ -44,6 +44,14 @@ const JobSchema = new mongoose.Schema(
       type: [Object],
       default: [],
     },
+    isCompanyList: {
+      type: Boolean,
+      default: false,
+    },
+    companies: {
+      type: [Object],
+      default: [],
+    },
     sourceUrl: {
       type: String,
       required: true,
