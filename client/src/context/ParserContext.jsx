@@ -30,6 +30,7 @@ export function ParserProvider({ children }) {
   const [history, setHistory] = useState(loadHistory);
 
   const parseUrl = useCallback(async (url, pages = 1) => {
+    console.log("🔍 [Frontend ParserContext] parseUrl received pages count:", pages);
     setStatus(PARSE_STATUS.LOADING);
     setError("");
     try {

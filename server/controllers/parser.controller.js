@@ -12,6 +12,7 @@ import ResponseHelper from "../helpers/response.js";
 
 export async function parseUrl(req, res, next) {
   const { url, pages = 1 } = req.body;
+  console.log("🤖 [Backend parseUrl] Incoming Request Body:", req.body);
   if (!url) {
     return ResponseHelper.error(res, "URL is required", 400);
   }

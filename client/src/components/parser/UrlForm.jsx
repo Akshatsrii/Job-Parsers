@@ -16,6 +16,7 @@ export default function UrlForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log("🔍 [Frontend UrlForm] URL:", url, "Pages:", pages);
     const { valid, message } = validateUrlInput(url);
     if (!valid) {
       setFieldError(message);
@@ -23,6 +24,7 @@ export default function UrlForm() {
     }
     setFieldError("");
     try {
+      console.log("🔍 [Frontend UrlForm] Dispatching parseUrl with pages count:", parseInt(pages) || 1);
       await parseUrl(url.trim(), parseInt(pages) || 1);
     } catch {
       // error already surfaced via toast + context
