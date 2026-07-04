@@ -10,10 +10,11 @@ export function cleanHtml(html) {
   try {
     const $ = load(html);
 
-    // Remove scripts except application/ld+json
+    // Remove scripts except application/ld+json and __NEXT_DATA__
     $("script").each((_, el) => {
       const type = $(el).attr("type");
-      if (type !== "application/ld+json") {
+      const id = $(el).attr("id");
+      if (type !== "application/ld+json" && id !== "__NEXT_DATA__") {
         $(el).remove();
       }
     });
