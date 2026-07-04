@@ -67,8 +67,8 @@ export function normalizeJobData(raw) {
     parsedSkills = raw.skills.map((s) => cleanStr(s)).filter(Boolean);
   }
 
-  // Fallback: extract technical keywords from description text if listing is empty or short
-  if (parsedSkills.length < 3 && description) {
+  // Fallback: extract technical keywords from description text to enrich the skills list
+  if (description) {
     const skillsFromDesc = extractSkillsFromText(description);
     parsedSkills = [...new Set([...parsedSkills, ...skillsFromDesc])];
   }

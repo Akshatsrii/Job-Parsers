@@ -35,6 +35,12 @@ export async function parseJob(url) {
       console.log("🔍 [Level 1] Executing extractor...");
       rawData = extractor(html);
 
+      // If it is a job list, return immediately
+      if (rawData && rawData.isJobList) {
+        console.log("✅ [Level 1] Job list extraction successful!");
+        return rawData;
+      }
+
       // If we got high-quality matching data, immediately return
       if (rawData && rawData.title && rawData.company) {
         console.log("✅ [Level 1] Static extraction successful!");
@@ -63,6 +69,12 @@ export async function parseJob(url) {
       ...rawData,
       ...dynamicData,
     };
+
+    // If it is a job list, return immediately
+    if (rawData && rawData.isJobList) {
+      console.log("✅ [Level 2] Job list extraction successful!");
+      return rawData;
+    }
 
     if (rawData.title || rawData.company) {
       console.log("✅ [Level 2] Dynamic extraction successful!");
@@ -104,6 +116,12 @@ export async function parseJob(url) {
   }
 
   // If all levels fail, throw a detailed error
+  if (lastError && lastError.message.includes("Playwright browser instance unavailable")) {
+    throw new Error(
+      "This page is protected by Cloudflare bot protection. Since the headless browser is not installed on the hosted server, we cannot scrape it. Please run the app locally with Playwright installed, or paste the job description/HTML directly."
+    );
+  }
+
   throw new Error(
     lastError
       ? `Parsing failed: ${lastError.message}`

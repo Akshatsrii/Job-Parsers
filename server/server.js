@@ -52,3 +52,9 @@ async function start() {
 }
 
 start();
+app.get("/", (req, res) => {
+  res.json({
+    success: true,
+    message: "Job Parser API is running 🚀",
+  });
+});

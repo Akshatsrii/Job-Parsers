@@ -1,5 +1,6 @@
 import UrlForm from "../components/parser/UrlForm.jsx";
 import ResultCard from "../components/parser/ResultCard.jsx";
+import JobListCard from "../components/parser/JobListCard.jsx";
 import Loader from "../components/common/Loader.jsx";
 import useParser from "../hooks/useParser.js";
 import { PARSE_STATUS } from "../utils/constants.js";
@@ -24,7 +25,14 @@ export default function Parser() {
         </div>
       )}
 
-      {status === PARSE_STATUS.SUCCESS && jobData && <ResultCard jobData={jobData} />}
+      {status === PARSE_STATUS.SUCCESS && jobData && (
+        jobData.isJobList ? (
+          <JobListCard jobData={jobData} />
+        ) : (
+          <ResultCard jobData={jobData} />
+        )
+      )}
     </div>
   );
 }
+

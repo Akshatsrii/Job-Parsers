@@ -36,6 +36,14 @@ const JobSchema = new mongoose.Schema(
       default: "",
       trim: true,
     },
+    isJobList: {
+      type: Boolean,
+      default: false,
+    },
+    jobs: {
+      type: [Object],
+      default: [],
+    },
     sourceUrl: {
       type: String,
       required: true,

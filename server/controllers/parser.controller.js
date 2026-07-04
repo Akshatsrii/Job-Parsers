@@ -19,12 +19,31 @@ export async function parseUrl(req, res, next) {
   try {
     const jobData = await parseJob(url);
 
+    const getSourceName = (u) => {
+      const lower = u.toLowerCase();
+      if (lower.includes("ambitionbox.com")) return "AmbitionBox";
+      if (lower.includes("internshala.com")) return "Internshala";
+      if (lower.includes("naukri.com")) return "Naukri";
+      if (lower.includes("indeed.com")) return "Indeed";
+      if (lower.includes("linkedin.com")) return "LinkedIn";
+      return "Job Portal";
+    };
+
+    const payload = jobData.isJobList ? {
+      title: `Job List: ${jobData.jobs.length} jobs found`,
+      company: getSourceName(url),
+      description: `Extracted ${jobData.jobs.length} jobs from the listing URL.`,
+      isJobList: true,
+      jobs: jobData.jobs,
+      sourceUrl: url,
+    } : {
+      ...jobData,
+      sourceUrl: url,
+    };
+
     if (getDBStatus()) {
       // Save parsed data to MongoDB
-      const job = await Job.create({
-        ...jobData,
-        sourceUrl: url,
-      });
+      const job = await Job.create(payload);
 
       const historyItem = await History.create({
         jobId: job._id,
@@ -43,10 +62,7 @@ export async function parseUrl(req, res, next) {
       return ResponseHelper.success(res, responseData, "Job parsed and saved successfully", 200);
     } else {
       // In-memory cache fallback
-      const cached = saveToCache({
-        ...jobData,
-        sourceUrl: url,
-      });
+      const cached = saveToCache(payload);
       // Ensure the id matches what frontend expects for deleting/viewing
       const responseData = {
         ...cached,
