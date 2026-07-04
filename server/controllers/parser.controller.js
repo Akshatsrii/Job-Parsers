@@ -11,13 +11,42 @@ import { parseJob } from "../services/parser/index.js";
 import ResponseHelper from "../helpers/response.js";
 
 export async function parseUrl(req, res, next) {
-  const { url } = req.body;
+  const { url, pages = 1 } = req.body;
   if (!url) {
     return ResponseHelper.error(res, "URL is required", 400);
   }
 
   try {
-    const jobData = await parseJob(url);
+    let jobData = await parseJob(url);
+
+    // Support paginated scraping for lists (jobs or companies)
+    const numPages = Math.min(Math.max(parseInt(pages) || 1, 1), 10);
+    if (numPages > 1 && (jobData.isJobList || jobData.isCompanyList)) {
+      try {
+        const urlObj = new URL(url);
+        let startPage = 1;
+        if (urlObj.searchParams.has("page")) {
+          startPage = parseInt(urlObj.searchParams.get("page")) || 1;
+        }
+
+        for (let i = 1; i < numPages; i++) {
+          const nextPageNum = startPage + i;
+          urlObj.searchParams.set("page", nextPageNum);
+          const nextPageUrl = urlObj.toString();
+
+          console.log(`🤖 [Pagination] Scraping page ${nextPageNum}: ${nextPageUrl}`);
+          const nextPageData = await parseJob(nextPageUrl);
+
+          if (jobData.isJobList && nextPageData.isJobList && Array.isArray(nextPageData.jobs)) {
+            jobData.jobs = jobData.jobs.concat(nextPageData.jobs);
+          } else if (jobData.isCompanyList && nextPageData.isCompanyList && Array.isArray(nextPageData.companies)) {
+            jobData.companies = jobData.companies.concat(nextPageData.companies);
+          }
+        }
+      } catch (paginateError) {
+        console.error("⚠️ Pagination error during scraping:", paginateError.message);
+      }
+    }
 
     const getSourceName = (u) => {
       const lower = u.toLowerCase();

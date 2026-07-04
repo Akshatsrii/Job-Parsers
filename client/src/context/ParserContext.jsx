@@ -29,11 +29,11 @@ export function ParserProvider({ children }) {
   const [error, setError] = useState("");
   const [history, setHistory] = useState(loadHistory);
 
-  const parseUrl = useCallback(async (url) => {
+  const parseUrl = useCallback(async (url, pages = 1) => {
     setStatus(PARSE_STATUS.LOADING);
     setError("");
     try {
-      const data = await extractJobData(url);
+      const data = await extractJobData(url, pages);
       const enrichedData = { ...data, sourceUrl: url, id: generateId(), parsedAt: new Date().toISOString() };
       setJobData(enrichedData);
       setStatus(PARSE_STATUS.SUCCESS);

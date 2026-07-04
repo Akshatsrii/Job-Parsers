@@ -1,7 +1,7 @@
 import axiosInstance from "./axios.js";
 
-export async function parseJobUrl(url) {
-  const { data } = await axiosInstance.post("/parser/parse", { url });
+export async function parseJobUrl(url, pages = 1) {
+  const { data } = await axiosInstance.post("/parser/parse", { url, pages });
   return data;
 }
 
