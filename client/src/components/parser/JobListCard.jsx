@@ -2,9 +2,12 @@ import { useState } from "react";
 import { Briefcase, Building2, MapPin, DollarSign, Clock, Tag, ExternalLink, Search, Sparkles } from "lucide-react";
 import Card from "../common/Card.jsx";
 import Button from "../common/Button.jsx";
+import JobDetailsModal from "./JobDetailsModal.jsx";
 
 export default function JobListCard({ jobData }) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedJob, setSelectedJob] = useState(null);
+  
   if (!jobData || !jobData.jobs) return null;
 
   const filteredJobs = jobData.jobs.filter((job) => {
@@ -130,18 +133,35 @@ export default function JobListCard({ jobData }) {
                     <span>{job.postedDate}</span>
                   </div>
                 )}
-                {job.applyUrl && (
-                  <a href={job.applyUrl} target="_blank" rel="noreferrer" className="w-full md:w-auto">
-                    <Button variant="outline" size="sm" icon={ExternalLink} className="w-full md:w-auto hover:bg-primary-600 hover:text-white hover:border-primary-600 transition-all">
-                      Apply / View
-                    </Button>
-                  </a>
-                )}
+                <div className="flex gap-2 w-full md:w-auto">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setSelectedJob(job)}
+                    className="w-full md:w-auto hover:bg-primary-600 hover:text-white hover:border-primary-600 transition-all"
+                  >
+                    View Details
+                  </Button>
+                  {job.applyUrl && (
+                    <a href={job.applyUrl} target="_blank" rel="noreferrer" className="shrink-0">
+                      <Button variant="primary" size="sm" icon={ExternalLink}>
+                        Apply
+                      </Button>
+                    </a>
+                  )}
+                </div>
               </div>
             </div>
           ))}
         </div>
       )}
+
+      {/* Details Scraping Modal */}
+      <JobDetailsModal 
+        isOpen={selectedJob !== null} 
+        onClose={() => setSelectedJob(null)} 
+        job={selectedJob} 
+      />
     </div>
   );
 }
