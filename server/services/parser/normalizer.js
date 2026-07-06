@@ -67,14 +67,68 @@ export function normalizeJobData(raw) {
     parsedSkills = raw.skills.map((s) => cleanStr(s)).filter(Boolean);
   }
 
-  // Fallback: extract technical keywords from description text to enrich the skills list
+  // Resilient parsing of skills and description text
   if (description) {
+    // 1. Check if description has inline "Key skills for the job" section
+    const skillsHeaderRegex = /(?:key\s+skills\s+for\s+the\s+job|required\s+skills|skills\s+required)/i;
+    const parts = description.split(skillsHeaderRegex);
+    if (parts.length > 1) {
+      const skillsPart = parts[1];
+      const lines = skillsPart
+        .split(/[\r\n]+/)
+        .map((l) => cleanStr(l))
+        .filter(Boolean);
+
+      for (const line of lines) {
+        // Strip out read full description or action tags from skills section
+        if (
+          line.toLowerCase().includes("read full description") ||
+          line.toLowerCase().includes("apply direct") ||
+          line.toLowerCase().includes("+") ||
+          line.toLowerCase().includes("more")
+        ) {
+          continue;
+        }
+        if (line.length > 1 && line.length < 35 && !line.includes("jobs)")) {
+          parsedSkills.push(line);
+        }
+      }
+    }
+
+    // 2. Fallback: extract technical keywords from description text to enrich the skills list
     const skillsFromDesc = extractSkillsFromText(description);
-    parsedSkills = [...new Set([...parsedSkills, ...skillsFromDesc])];
+    parsedSkills = [...parsedSkills, ...skillsFromDesc];
+
+    // 3. Clean job description by truncating it at the "Read full description" or "Key skills" block
+    const truncateRegex = /(?:read\s+full\s+description|key\s+skills\s+for\s+the\s+job|required\s+skills)/i;
+    description = description.split(truncateRegex)[0].trim();
   }
 
   // Clean and unify skill casing/names (e.g. Nodejs -> Node.js)
   parsedSkills = parsedSkills
+    .map((s) => cleanStr(s))
+    .filter((s) => {
+      if (!s) return false;
+      const lower = s.toLowerCase();
+      // Filter out search category junk (e.g. "TCS (4.5k jobs)", "Sales (84.3k jobs)", "Bengaluru (1.3L jobs)")
+      if (lower.includes("jobs)") || lower.includes("job)") || s.includes("(") || s.includes(")")) {
+        return false;
+      }
+      // Filter out generic counts and tags
+      if (lower.startsWith("+") && lower.endsWith("more")) {
+        return false;
+      }
+      if (
+        lower === "read full description" ||
+        lower === "detailed job description" ||
+        lower === "key skills for the job" ||
+        lower === "posted just now" ||
+        lower === "job description"
+      ) {
+        return false;
+      }
+      return s.length > 1 && s.length < 35; // reasonable length limit for a skill name
+    })
     .map((s) => {
       const lower = s.toLowerCase();
       if (lower === "nodejs" || lower === "node.js") return "Node.js";
