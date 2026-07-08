@@ -74,3 +74,54 @@ export function extractExperienceFromText(text) {
   }
   return "";
 }
+
+/**
+ * Scan raw text for email addresses
+ */
+export function extractEmailsFromText(text) {
+  if (!text) return [];
+  const matches = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g);
+  if (!matches) return [];
+  return [...new Set(matches.map(email => email.toLowerCase().trim()))];
+}
+
+/**
+ * Scan raw text for phone/contact numbers
+ */
+export function extractContactsFromText(text) {
+  if (!text) return [];
+  
+  const phoneRegexes = [
+    // International / Country code prefix + numbers (e.g., +91 98765 43210, +91-9876543210)
+    /(?:\+91|0)?[\s\-]?([6-9]\d{4}[\s\-]?\d{5})\b/g,
+    /(?:\+91|0)?[\s\-]?([6-9]\d{9})\b/g,
+    // Generic international formats (e.g. +1-555-123-4567, (555) 123-4567, etc.)
+    /(?:\+\d{1,3}[\s\-]?)?\(?\d{3}\)?[\s\-]?\d{3}[\s\-]?\d{4}\b/g,
+    // Landline format (e.g. 022-26543210, 080-12345678)
+    /\b0\d{2,4}[\s\-]?\d{6,8}\b/g
+  ];
+  
+  const contacts = new Set();
+  
+  for (const regex of phoneRegexes) {
+    const matches = text.match(regex);
+    if (matches) {
+      for (const m of matches) {
+        const clean = m.trim().replace(/\s+/g, " ");
+        // Avoid matching years or round salary values
+        if (clean.length >= 8 && clean.length <= 18) {
+          if (/^\d+$/.test(clean.replace(/[\s\-\+]/g, ""))) {
+            const digits = clean.replace(/[\s\-\+]/g, "");
+            if (digits.startsWith("1000") || digits === "1234567890") {
+              continue;
+            }
+          }
+          contacts.add(clean);
+        }
+      }
+    }
+  }
+  
+  return Array.from(contacts);
+}
+

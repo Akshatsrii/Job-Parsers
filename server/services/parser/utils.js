@@ -27,10 +27,22 @@ export function extractUsingSelectors(html, platform) {
     const list = siteSelectors[field];
     if (list) {
       for (const sel of list) {
-        const val = $(sel).first().text().trim();
-        if (val) {
-          result[field] = val;
-          break;
+        if (field === "description") {
+          const texts = [];
+          $(sel).each((_, el) => {
+            const txt = $(el).text().trim();
+            if (txt) texts.push(txt);
+          });
+          if (texts.length > 0) {
+            result[field] = texts.join("\n\n");
+            break;
+          }
+        } else {
+          const val = $(sel).first().text().trim();
+          if (val) {
+            result[field] = val;
+            break;
+          }
         }
       }
     }

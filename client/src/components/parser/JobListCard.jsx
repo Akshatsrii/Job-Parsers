@@ -3,6 +3,7 @@ import { Briefcase, Building2, MapPin, DollarSign, Clock, Tag, ExternalLink, Sea
 import Card from "../common/Card.jsx";
 import Button from "../common/Button.jsx";
 import JobDetailsModal from "./JobDetailsModal.jsx";
+import ExportCard from "./ExportCard.jsx";
 
 export default function JobListCard({ jobData }) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -162,6 +163,10 @@ export default function JobListCard({ jobData }) {
         onClose={() => setSelectedJob(null)} 
         job={selectedJob} 
       />
+
+      <div className="mt-6">
+        <ExportCard jobData={jobData} />
+      </div>
     </div>
   );
 }

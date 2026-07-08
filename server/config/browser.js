@@ -28,11 +28,13 @@ export async function fetchWithBrowser(url) {
     });
     page = await context.newPage();
     
-    // Go to URL and wait until the network is idle
-    await page.goto(url, { waitUntil: "domcontentloaded", timeout: 25000 });
-    
-    // Wait an additional 2s for client-side frameworks to finish hydration/fetches if necessary
-    await page.waitForTimeout(2000);
+    // Go to URL and wait until the DOM is loaded
+    try {
+      await page.goto(url, { waitUntil: "domcontentloaded", timeout: 15000 });
+      await page.waitForTimeout(1000);
+    } catch (err) {
+      console.warn(`⚠️ Playwright page.goto timed out: ${err.message}. Proceeding to extract content anyway...`);
+    }
     
     const content = await page.content();
     return content;

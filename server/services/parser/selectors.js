@@ -44,15 +44,18 @@ export default {
   },
   ambitionbox: {
     title: [
-      "h1",
       ".job-title",
+      "h1",
       "h2.company-name"
     ],
     company: [
+      ".employer-name",
       ".company-name",
       ".company-content-wrapper h2",
       ".company-name a",
-      "h1"
+      "[itemprop='hiringOrganization']",
+      "[class*='company-name']",
+      "[class*='employer-name']"
     ],
     location: [
       ".location",
@@ -70,14 +73,27 @@ export default {
       ".infoEntity"
     ],
     skills: [
+      ".key-skills .chip",
+      ".skills-section .chip",
+      ".skills-list .chip",
+      ".skills-wrapper .chip",
+      ".job-skills .chip",
       ".skills-list span",
-      ".skill-tag",
-      ".chip"
+      ".skill-tag"
     ],
     description: [
+      ".jd-description",
+      ".jd-body",
+      ".jd-text",
+      ".jobDesc",
       ".job-description",
+      ".description",
       ".description-body",
-      ".company-description"
+      ".rich-text-container",
+      ".jd-content",
+      ".jd-container",
+      ".job-desc",
+      "[itemprop='description']"
     ]
   },
   linkedin: {
@@ -186,12 +202,18 @@ export default {
     skills: [
       ".key-skill a",
       ".key-skill span",
-      ".chip"
+      ".key-skills .chip",
+      ".skills-section .chip",
+      ".skills-list .chip"
     ],
     description: [
       ".job-desc",
       ".job-description",
-      ".description"
+      ".description",
+      ".jd-description",
+      ".jd-body",
+      ".rich-text-container",
+      "[itemprop='description']"
     ]
   },
   foundit: {

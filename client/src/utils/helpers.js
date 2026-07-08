@@ -17,14 +17,46 @@ export function downloadFile(filename, content, mimeType = "application/json") {
 export function jsonToCsv(jobData) {
   if (!jobData) return "";
   const rows = [];
-  rows.push(["Field", "Value"]);
-  rows.push(["Title", jobData.title || ""]);
-  rows.push(["Company", jobData.company || ""]);
-  rows.push(["Location", jobData.location || ""]);
-  rows.push(["Salary", jobData.salary || ""]);
-  rows.push(["Experience", jobData.experience || ""]);
-  rows.push(["Skills", (jobData.skills || []).join("; ")]);
-  rows.push(["Source URL", jobData.sourceUrl || ""]);
+
+  if (jobData.isJobList && Array.isArray(jobData.jobs)) {
+    rows.push(["Index", "Job Title", "Company", "Location", "Salary", "Experience", "Work Mode", "Skills", "Apply URL"]);
+    jobData.jobs.forEach((job, index) => {
+      rows.push([
+        index + 1,
+        job.title || "",
+        job.company || "",
+        job.location || "",
+        job.salary || "",
+        job.experience || "",
+        job.workMode || "",
+        (job.skills || []).join("; "),
+        job.applyUrl || ""
+      ]);
+    });
+  } else if (jobData.isCompanyList && Array.isArray(jobData.companies)) {
+    rows.push(["Index", "Company Name", "Rating", "Reviews", "Company Type", "Headquarters", "Company Age", "No. of Employees"]);
+    jobData.companies.forEach((company, index) => {
+      rows.push([
+        index + 1,
+        company.name || "",
+        company.rating || "",
+        company.reviews || "",
+        company.companyType || "",
+        company.headquarters || "",
+        company.companyAge || "",
+        company.noOfEmployee || ""
+      ]);
+    });
+  } else {
+    rows.push(["Field", "Value"]);
+    rows.push(["Title", jobData.title || ""]);
+    rows.push(["Company", jobData.company || ""]);
+    rows.push(["Location", jobData.location || ""]);
+    rows.push(["Salary", jobData.salary || ""]);
+    rows.push(["Experience", jobData.experience || ""]);
+    rows.push(["Skills", (jobData.skills || []).join("; ")]);
+    rows.push(["Source URL", jobData.sourceUrl || ""]);
+  }
 
   return rows
     .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))

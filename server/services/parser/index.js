@@ -33,7 +33,8 @@ export async function parseJob(url) {
       html = cleanHtml(rawHtml);
 
       console.log("🔍 [Level 1] Executing extractor...");
-      rawData = extractor(html);
+      rawData = extractor(html, url) || {};
+      rawData.html = html;
 
       // If it is a job list or company list, return immediately
       if (rawData && (rawData.isJobList || rawData.isCompanyList)) {
@@ -62,12 +63,13 @@ export async function parseJob(url) {
     html = cleanHtml(rawHtml);
 
     console.log("🔍 [Level 2] Executing extractor...");
-    const dynamicData = extractor(html);
+    const dynamicData = extractor(html, url);
     
     // Merge results from dynamic rendering
     rawData = {
       ...rawData,
       ...dynamicData,
+      html,
     };
 
     // If it is a job list or company list, return immediately
@@ -103,6 +105,7 @@ export async function parseJob(url) {
         experience: rawData.experience || fallbackData.experience,
         skills: (rawData.skills && rawData.skills.length > 0) ? rawData.skills : fallbackData.skills,
         description: rawData.description || fallbackData.description,
+        html: html,
       };
 
       const normalized = normalizeJobData(mergedData);
