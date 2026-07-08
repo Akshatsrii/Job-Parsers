@@ -36,6 +36,16 @@ const JobSchema = new mongoose.Schema(
       default: "",
       trim: true,
     },
+    email: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    contact: {
+      type: String,
+      default: "",
+      trim: true,
+    },
     isJobList: {
       type: Boolean,
       default: false,

@@ -1,8 +1,11 @@
 import {
   extractSkillsFromText,
   extractSalaryFromText,
-  extractExperienceFromText
+  extractExperienceFromText,
+  extractEmailsFromText,
+  extractContactsFromText
 } from "./regex.js";
+import { load } from "cheerio";
 
 /**
  * Normalizes scraped job data to match a consistent JSON schema
@@ -16,6 +19,7 @@ export function normalizeJobData(raw) {
   let salary = cleanStr(raw.salary);
   let experience = cleanStr(raw.experience);
   let description = raw.description ? raw.description.trim() : "";
+  const originalDescription = description;
 
   // Clean company name from rating/reviews trailing noise (e.g. "TCS 3.8 Reviews" or "Wipro3.9")
   if (company) {
@@ -36,11 +40,11 @@ export function normalizeJobData(raw) {
     } else {
       // Split by commas, keep up to 3 location segments (e.g., City, State, Country)
       location = location
-        .split(",")
-        .map((p) => cleanStr(p))
-        .filter(Boolean)
-        .slice(0, 3)
-        .join(", ");
+         .split(",")
+         .map((p) => cleanStr(p))
+         .filter(Boolean)
+         .slice(0, 3)
+         .join(", ");
     }
   }
 
@@ -147,6 +151,54 @@ export function normalizeJobData(raw) {
     })
     .filter((s, idx, self) => s && self.indexOf(s) === idx); // unique list
 
+  // Extract email and contact info
+  let email = raw.email || "";
+  let contact = raw.contact || "";
+
+  // 1. Try to extract from the full original job description text
+  if (originalDescription) {
+    if (!email) {
+      const emailMatches = extractEmailsFromText(originalDescription);
+      if (emailMatches.length > 0) {
+        email = emailMatches.join(", ");
+      }
+    }
+    if (!contact) {
+      const contactMatches = extractContactsFromText(originalDescription);
+      if (contactMatches.length > 0) {
+        contact = contactMatches.join(", ");
+      }
+    }
+  }
+
+  // 2. Fallback to scanning overall visible HTML text if not found in the description text
+  if (raw.html && (!email || !contact)) {
+    try {
+      const $ = load(raw.html);
+      $("script, style, iframe, noscript, header, footer, nav").remove();
+      const visibleText = $("body").text();
+      
+      if (!email) {
+        const emailMatches = extractEmailsFromText(visibleText);
+        if (emailMatches.length > 0) {
+          email = emailMatches.join(", ");
+        }
+      }
+      if (!contact) {
+        const contactMatches = extractContactsFromText(visibleText);
+        if (contactMatches.length > 0) {
+          contact = contactMatches.join(", ");
+        }
+      }
+    } catch (e) {
+      console.warn("⚠️ Failed to parse fallback html for email/contacts:", e.message);
+    }
+  }
+
+  // Ensure fallback values
+  email = email || "Not Disclosed";
+  contact = contact || "Not Disclosed";
+
   return {
     title: title || "Job Title Not Found",
     company: company || "Company Name Not Found",
@@ -155,5 +207,7 @@ export function normalizeJobData(raw) {
     experience: experience || "Not Specified",
     skills: parsedSkills,
     description: description || "No Description Provided",
+    email,
+    contact,
   };
 }

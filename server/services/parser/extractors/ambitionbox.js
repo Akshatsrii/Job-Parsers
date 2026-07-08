@@ -4,7 +4,7 @@ import { extractUsingSelectors } from "../utils.js";
 /**
  * Scrapes AmbitionBox company pages or job postings.
  */
-export function extractAmbitionBox(html) {
+export function extractAmbitionBox(html, url) {
   const $ = load(html);
 
   // Check if it's a company list page (div.company-content-wrapper cards - old layout)
@@ -74,7 +74,11 @@ export function extractAmbitionBox(html) {
 
   const nextDataScript = $("#__NEXT_DATA__");
 
-  if (nextDataScript.length > 0) {
+  // Determine if it is a single Job Detail Page (JDP) vs search list page
+  const isJdp = (url && (url.toLowerCase().includes("-jdp") || url.toLowerCase().includes("/jobs/detail/"))) || 
+                $(".jd-description, .jd-body, .jd-text, .jobDesc, .job-description, [itemprop='description']").length > 0;
+
+  if (!isJdp && nextDataScript.length > 0) {
     try {
       const parsed = JSON.parse(nextDataScript.html());
       const jobsList = parsed?.props?.pageProps?.jobsList;

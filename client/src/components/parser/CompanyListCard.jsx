@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Building2, Star, MessageSquare, MapPin, Calendar, Users, Tag, Search, Sparkles } from "lucide-react";
 import Card from "../common/Card.jsx";
+import ExportCard from "./ExportCard.jsx";
 
 export default function CompanyListCard({ jobData }) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -117,6 +118,10 @@ export default function CompanyListCard({ jobData }) {
           ))}
         </div>
       )}
+
+      <div className="mt-6">
+        <ExportCard jobData={jobData} />
+      </div>
     </div>
   );
 }

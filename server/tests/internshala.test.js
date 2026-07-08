@@ -61,5 +61,29 @@ export function runInternshalaTests() {
   assert.ok(normalized.skills.includes("Git"), "Skills should include Git parsed from text description");
 
   console.log("  ✔️ Data normalization assertions passed!");
+
+  // Test email and contact number extraction
+  const mockHtmlWithContact = `
+    <!DOCTYPE html>
+    <html>
+      <body>
+        <div class="profile_heading">MERN Stack Developer</div>
+        <div class="company_name">
+          <a class="link_display_like_text">Alpha Web Developers 4.1 ★</a>
+        </div>
+        <div class="experience">0-2 years</div>
+        <div class="text-container">
+          Send resumes to hr@alphaweb.com or call us at +91-9876543210.
+        </div>
+      </body>
+    </html>
+  `;
+  const rawWithContact = extractInternshala(mockHtmlWithContact);
+  const normalizedWithContact = normalizeJobData(rawWithContact);
+
+  assert.strictEqual(normalizedWithContact.email, "hr@alphaweb.com", "Should extract email from description");
+  assert.strictEqual(normalizedWithContact.contact, "+91-9876543210", "Should extract contact phone from description");
+
+  console.log("  ✔️ Email and contact extraction assertions passed!");
   console.log("✅ [Test] Internshala Extractor Tests Passed!\n");
 }
