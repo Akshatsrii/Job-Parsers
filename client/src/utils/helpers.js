@@ -19,7 +19,7 @@ export function jsonToCsv(jobData) {
   const rows = [];
 
   if (jobData.isJobList && Array.isArray(jobData.jobs)) {
-    rows.push(["Index", "Job Title", "Company", "Location", "Salary", "Experience", "Work Mode", "Skills", "Apply URL"]);
+    rows.push(["Index", "Job Title", "Company", "Location", "Salary", "Experience", "Work Mode", "Skills", "Apply URL", "Description", "Email", "Contact"]);
     jobData.jobs.forEach((job, index) => {
       rows.push([
         index + 1,
@@ -30,7 +30,10 @@ export function jsonToCsv(jobData) {
         job.experience || "",
         job.workMode || "",
         (job.skills || []).join("; "),
-        job.applyUrl || ""
+        job.applyUrl || "",
+        job.description || "No Description Provided. Click 'View Details' to fetch.",
+        job.email || "Not Disclosed",
+        job.contact || "Not Disclosed"
       ]);
     });
   } else if (jobData.isCompanyList && Array.isArray(jobData.companies)) {
@@ -55,6 +58,9 @@ export function jsonToCsv(jobData) {
     rows.push(["Salary", jobData.salary || ""]);
     rows.push(["Experience", jobData.experience || ""]);
     rows.push(["Skills", (jobData.skills || []).join("; ")]);
+    rows.push(["Description", jobData.description || ""]);
+    rows.push(["Email", jobData.email || ""]);
+    rows.push(["Contact", jobData.contact || ""]);
     rows.push(["Source URL", jobData.sourceUrl || ""]);
   }
 

@@ -86,6 +86,8 @@ export function extractInternshala(html) {
           experience: duration || "Not Specified",
           skills,
           description: description || "No Description Provided",
+          email: "Not Disclosed",
+          contact: "Not Disclosed",
           postedDate: postedDate || null,
           applyUrl,
           workMode,

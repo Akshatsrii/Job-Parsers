@@ -74,12 +74,50 @@ export function ParserProvider({ children }) {
     saveHistory([]);
   }, []);
 
+  const updateJobDetails = useCallback((applyUrl, details) => {
+    setJobData((prev) => {
+      if (!prev) return prev;
+      const updated = { ...prev };
+      if (prev.isJobList && prev.jobs) {
+        updated.jobs = prev.jobs.map((j) => {
+          if (j.applyUrl === applyUrl) {
+            return {
+              ...j,
+              description: details.description || j.description,
+              email: details.email || j.email || "Not Disclosed",
+              contact: details.contact || j.contact || "Not Disclosed",
+              skills: details.skills && details.skills.length > 0 ? details.skills : j.skills,
+              salary: details.salary && details.salary !== "Not Disclosed" ? details.salary : j.salary,
+              experience: details.experience && details.experience !== "Not Specified" ? details.experience : j.experience,
+              postedDate: details.postedDate || j.postedDate,
+            };
+          }
+          return j;
+        });
+      }
+      
+      setHistory((prevHistory) => {
+        const updatedHistory = prevHistory.map((item) => {
+          if (item.id === prev.id) {
+            return updated;
+          }
+          return item;
+        });
+        saveHistory(updatedHistory);
+        return updatedHistory;
+      });
+
+      return updated;
+    });
+  }, []);
+
   const value = {
     status,
     jobData,
     error,
     history,
     parseUrl,
+    updateJobDetails,
     clearResult,
     removeFromHistory,
     clearHistory,

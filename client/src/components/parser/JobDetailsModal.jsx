@@ -3,11 +3,13 @@ import { X, Building2, MapPin, Calendar, Star, ExternalLink, Briefcase, IndianRu
 import { parseJobUrl } from "../../api/parser.api.js";
 import Button from "../common/Button.jsx";
 import Loader from "../common/Loader.jsx";
+import useParser from "../../hooks/useParser.js";
 
 export default function JobDetailsModal({ isOpen, onClose, job }) {
   const [loading, setLoading] = useState(false);
   const [details, setDetails] = useState(null);
   const [error, setError] = useState("");
+  const { updateJobDetails } = useParser();
 
   useEffect(() => {
     if (!isOpen || !job || !job.applyUrl) return;
@@ -20,6 +22,8 @@ export default function JobDetailsModal({ isOpen, onClose, job }) {
         const response = await parseJobUrl(job.applyUrl);
         if (response && response.success && response.data) {
           setDetails(response.data);
+          // Update the main jobData context list with these fetched details
+          updateJobDetails(job.applyUrl, response.data);
         } else {
           setError(response?.message || "Failed to fetch job details");
         }
@@ -31,7 +35,7 @@ export default function JobDetailsModal({ isOpen, onClose, job }) {
     };
 
     fetchDetails();
-  }, [isOpen, job]);
+  }, [isOpen, job, updateJobDetails]);
 
   if (!isOpen) return null;
 
