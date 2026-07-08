@@ -10,6 +10,41 @@ import {
 import { parseJob } from "../services/parser/index.js";
 import ResponseHelper from "../helpers/response.js";
 
+async function populateJobDetails(jobs) {
+  const concurrencyLimit = 5;
+  const results = [...jobs];
+  
+  for (let i = 0; i < results.length; i += concurrencyLimit) {
+    const batch = results.slice(i, i + concurrencyLimit);
+    await Promise.all(
+      batch.map(async (job) => {
+        if (job.applyUrl) {
+          try {
+            console.log(`🤖 [Auto-Scrape] Fetching details for: ${job.applyUrl}`);
+            const details = await parseJob(job.applyUrl);
+            if (details) {
+              job.description = details.description || job.description;
+              job.email = details.email || job.email;
+              job.contact = details.contact || job.contact;
+              if (details.skills && details.skills.length > 0) {
+                job.skills = details.skills;
+              }
+              if (details.salary && details.salary !== "Not Disclosed") {
+                job.salary = details.salary;
+              }
+              if (details.experience && details.experience !== "Not Specified") {
+                job.experience = details.experience;
+              }
+            }
+          } catch (err) {
+            console.warn(`⚠️ [Auto-Scrape] Failed for ${job.applyUrl}:`, err.message);
+          }
+        }
+      })
+    );
+  }
+}
+
 export async function parseUrl(req, res, next) {
   const { url, pages = 1 } = req.body;
   console.log("🤖 [Backend parseUrl] Incoming Request Body:", req.body);
@@ -47,6 +82,12 @@ export async function parseUrl(req, res, next) {
       } catch (paginateError) {
         console.error("⚠️ Pagination error during scraping:", paginateError.message);
       }
+    }
+
+    // Auto-populate details for all jobs in the list
+    if (jobData.isJobList && Array.isArray(jobData.jobs)) {
+      console.log(`🤖 [Auto-Scrape] Populating details for ${jobData.jobs.length} jobs...`);
+      await populateJobDetails(jobData.jobs);
     }
 
     const getSourceName = (u) => {
