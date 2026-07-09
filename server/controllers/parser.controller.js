@@ -45,6 +45,24 @@ async function populateJobDetails(jobs) {
   }
 }
 
+// Helper to limit concurrency of async tasks
+async function limitConcurrency(tasks, limit) {
+  const results = [];
+  const executing = [];
+  for (const task of tasks) {
+    const p = Promise.resolve().then(() => task());
+    results.push(p);
+    if (limit <= tasks.length) {
+      const e = p.then(() => executing.splice(executing.indexOf(e), 1));
+      executing.push(e);
+      if (executing.length >= limit) {
+        await Promise.race(executing);
+      }
+    }
+  }
+  return Promise.all(results);
+}
+
 export async function parseUrl(req, res, next) {
   const { url, pages = 1 } = req.body;
   console.log("🤖 [Backend parseUrl] Incoming Request Body:", req.body);
@@ -65,14 +83,29 @@ export async function parseUrl(req, res, next) {
           startPage = parseInt(urlObj.searchParams.get("page")) || 1;
         }
 
+        const taskFns = [];
         for (let i = 1; i < numPages; i++) {
           const nextPageNum = startPage + i;
-          urlObj.searchParams.set("page", nextPageNum);
-          const nextPageUrl = urlObj.toString();
+          const pageUrlObj = new URL(url);
+          pageUrlObj.searchParams.set("page", nextPageNum);
+          const nextPageUrl = pageUrlObj.toString();
 
-          console.log(`🤖 [Pagination] Scraping page ${nextPageNum}: ${nextPageUrl}`);
-          const nextPageData = await parseJob(nextPageUrl);
+          taskFns.push(async () => {
+            console.log(`🤖 [Pagination] Concurrently scraping page ${nextPageNum}: ${nextPageUrl}`);
+            try {
+              return await parseJob(nextPageUrl);
+            } catch (err) {
+              console.error(`⚠️ Page ${nextPageNum} failed:`, err.message);
+              return null;
+            }
+          });
+        }
 
+        // Run pagination tasks in parallel with a concurrency limit of 5
+        const pagesData = await limitConcurrency(taskFns, 5);
+
+        for (const nextPageData of pagesData) {
+          if (!nextPageData) continue;
           if (jobData.isJobList && nextPageData.isJobList && Array.isArray(nextPageData.jobs)) {
             jobData.jobs = jobData.jobs.concat(nextPageData.jobs);
           } else if (jobData.isCompanyList && nextPageData.isCompanyList && Array.isArray(nextPageData.companies)) {
@@ -84,10 +117,11 @@ export async function parseUrl(req, res, next) {
       }
     }
 
-    // Auto-populate details for all jobs in the list
+    // Auto-populate details for the jobs in the list (capped at first 20 jobs to prevent Render 30s timeout)
     if (jobData.isJobList && Array.isArray(jobData.jobs)) {
-      console.log(`🤖 [Auto-Scrape] Populating details for ${jobData.jobs.length} jobs...`);
-      await populateJobDetails(jobData.jobs);
+      const jobsToPopulate = jobData.jobs.slice(0, 20);
+      console.log(`🤖 [Auto-Scrape] Populating details for first ${jobsToPopulate.length} jobs...`);
+      await populateJobDetails(jobsToPopulate);
     }
 
     const getSourceName = (u) => {

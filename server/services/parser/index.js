@@ -23,7 +23,15 @@ export async function parseJob(url) {
   let lastError = null;
 
   // 1. Determine if this platform is JS-heavy and strictly requires Playwright
-  const requiresBrowser = ["linkedin", "indeed"].includes(platform);
+  let requiresBrowser = ["linkedin", "indeed", "internshala"].includes(platform);
+  if (platform === "internshala" && url) {
+    // Internshala detail pages can be fetched with Axios directly (Level 1),
+    // whereas list pages require Playwright (Level 2) to avoid 403 blocks.
+    const isDetailUrl = url.toLowerCase().includes("/detail/") || url.toLowerCase().includes("-detail");
+    if (isDetailUrl) {
+      requiresBrowser = false;
+    }
+  }
 
   if (!requiresBrowser) {
     // --- Level 1: Static Axios + Cheerio Fetch ---
