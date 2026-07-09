@@ -6,7 +6,7 @@ export async function getBrowser() {
   if (browserInstance) return browserInstance;
   try {
     browserInstance = await chromium.launch({
-      headless: false,
+      headless: true,
       args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage", "--disable-blink-features=AutomationControlled"],
     });
     return browserInstance;

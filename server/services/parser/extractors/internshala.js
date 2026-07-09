@@ -6,9 +6,14 @@ import { extractUsingSelectors } from "../utils.js";
  */
 export function extractInternshala(html, url) {
   const $ = load(html);
+  const isDetailUrl = url && (
+    url.toLowerCase().includes("/detail/") || 
+    url.toLowerCase().includes("-detail") ||
+    url.toLowerCase().includes("/job/detail/")
+  );
   const cards = $(".individual_internship");
 
-  if (cards.length > 0) {
+  if (!isDetailUrl && cards.length > 0) {
     const jobs = [];
     const isDetailUrl = url && (url.toLowerCase().includes("/detail/") || url.toLowerCase().includes("-detail"));
 
