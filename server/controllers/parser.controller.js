@@ -265,3 +265,55 @@ export async function clearHistory(req, res, next) {
     next(error);
   }
 }
+
+export async function chatWithGemini(req, res, next) {
+  const { prompt, contents, responseMimeType } = req.body;
+  const apiKey = process.env.GEMINI_API_KEY;
+
+  if (!apiKey || apiKey === "PLACEHOLDER_GEMINI_KEY") {
+    return ResponseHelper.error(res, "Gemini API Key is not configured on the server. Please add GEMINI_API_KEY in the server's .env file.", 400);
+  }
+
+  if (!prompt && !contents) {
+    return ResponseHelper.error(res, "Prompt or contents are required", 400);
+  }
+
+  try {
+    const body = {
+      contents: contents || [
+        {
+          role: "user",
+          parts: [{ text: prompt }]
+        }
+      ]
+    };
+
+    if (responseMimeType) {
+      body.generationConfig = { responseMimeType };
+    }
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      }
+    );
+
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error("Gemini API error:", errText);
+      return ResponseHelper.error(res, "Failed to fetch response from Gemini API", 500);
+    }
+
+    const data = await response.json();
+    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    
+    return ResponseHelper.success(res, { reply }, "Chat response generated successfully", 200);
+  } catch (err) {
+    console.error("Error in chatWithGemini:", err);
+    return ResponseHelper.error(res, err.message || "Failed to process chat", 500);
+  }
+}
+
