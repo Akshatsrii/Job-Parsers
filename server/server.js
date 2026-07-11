@@ -48,8 +48,16 @@ async function start() {
   app.listen(PORT, () => {
     console.log(`🚀 Job Parser Backend listening on http://localhost:${PORT}`);
     console.log(`💡 Proxy target for Vite client: http://localhost:${PORT}/api`);
+    
+    const key = process.env.GEMINI_API_KEY;
+    if (!key || key === "PLACEHOLDER_GEMINI_KEY") {
+      console.warn("⚠️  [Warning] GEMINI_API_KEY is not configured in server/.env");
+    } else {
+      console.log("✅ [Success] GEMINI_API_KEY loaded successfully from server/.env");
+    }
   });
 }
+
 
 start();
 app.get("/", (req, res) => {
