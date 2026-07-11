@@ -22,7 +22,7 @@ export default {
         sans: ["Inter", "system-ui", "sans-serif"],
       },
       boxShadow: {
-        card: "0 2px 10px rgba(0,0,0,0.06)",
+        card: "0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.08)",
       },
     },
   },
