@@ -14,3 +14,9 @@ export async function deleteHistoryItem(id) {
   const { data } = await axiosInstance.delete(`/parser/history/${id}`);
   return data;
 }
+
+export async function chatWithAI(prompt, contents, responseMimeType) {
+  const { data } = await axiosInstance.post("/parser/chat", { prompt, contents, responseMimeType });
+  return data;
+}
+
