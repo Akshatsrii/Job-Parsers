@@ -32,7 +32,7 @@ export default function UrlForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="card flex flex-col gap-4">
+    <form onSubmit={handleSubmit} className="card flex flex-col gap-4 border border-slate-200/60 bg-white shadow-sm hover:border-slate-300/80 transition-colors duration-200">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
         <div className="flex-1">
           <Input
@@ -43,19 +43,19 @@ export default function UrlForm() {
             error={fieldError}
           />
         </div>
-        <Button type="submit" icon={Search} loading={isLoading} className="sm:mt-0">
+        <Button type="submit" icon={Search} loading={isLoading} className="sm:mt-0 px-6 py-2.5">
           {isLoading ? "Parsing..." : "Extract Data"}
         </Button>
       </div>
 
       <div className="flex items-center gap-2 pl-1">
-        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
           Pages to scrape (for list pages):
         </label>
         <select
           value={pages}
           onChange={(e) => setPages(e.target.value)}
-          className="rounded-lg border border-gray-200 bg-white py-1 px-2 text-xs font-medium text-gray-700 shadow-sm focus:border-teal-500 focus:outline-none"
+          className="rounded-xl border border-slate-200 bg-white py-1.5 px-3 text-xs font-semibold text-slate-600 shadow-sm focus:border-primary-500 focus:outline-none cursor-pointer hover:border-slate-300 transition-colors"
         >
           <option value="1">1 Page (20 items)</option>
           <option value="3">3 Pages (60 items)</option>
