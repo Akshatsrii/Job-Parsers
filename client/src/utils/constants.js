@@ -1,6 +1,13 @@
-let baseUrl = import.meta.env.VITE_API_BASE_URL || "/api";
-if (baseUrl.startsWith("http") && !baseUrl.endsWith("/api")) {
-  baseUrl = baseUrl.replace(/\/$/, "") + "/api";
+// In production (Vercel), VITE_API_BASE_URL is not set (since .env is gitignored).
+// Vercel rewrites /api/* → https://job-parsers-2.onrender.com/api/* via vercel.json.
+// In local dev, the Vite proxy handles /api → localhost:5000.
+// So we always use relative "/api" UNLESS an explicit non-localhost URL is provided.
+const envUrl = import.meta.env.VITE_API_BASE_URL || "";
+let baseUrl = "/api";
+if (envUrl && !envUrl.includes("localhost") && !envUrl.includes("127.0.0.1")) {
+  // Only use the env URL if it's a real production URL (not localhost)
+  baseUrl = envUrl.replace(/\/$/, "");
+  if (!baseUrl.endsWith("/api")) baseUrl += "/api";
 }
 export const API_BASE_URL = baseUrl;
 

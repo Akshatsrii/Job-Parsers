@@ -22,7 +22,6 @@ export async function parseJob(url) {
   let rawData = {};
   let lastError = null;
 
-  // 1. Determine if this platform is JS-heavy and strictly requires Playwright
   let requiresBrowser = ["linkedin", "indeed", "internshala"].includes(platform);
   if (platform === "internshala" && url) {
     // Internshala detail pages can be fetched with Axios directly (Level 1),
@@ -31,6 +30,12 @@ export async function parseJob(url) {
     if (isDetailUrl) {
       requiresBrowser = false;
     }
+  }
+
+  // To prevent the UI from hanging for 12 seconds on every click of AmbitionBox View Details,
+  // we completely skip Playwright for AmbitionBox since it relies on Cloudflare and blocks scraping.
+  if (platform === "ambitionbox") {
+    requiresBrowser = false;
   }
 
   if (!requiresBrowser) {
@@ -65,36 +70,40 @@ export async function parseJob(url) {
   }
 
   // --- Level 2: Playwright Browser Fetch ---
-  try {
-    console.log("🌐 [Level 2] Launching headless browser with Playwright...");
-    const rawHtml = await fetchDynamicHtml(url);
-    html = cleanHtml(rawHtml);
+  if (requiresBrowser || platform !== "ambitionbox") {
+    try {
+      console.log("🌐 [Level 2] Launching headless browser with Playwright...");
+      const rawHtml = await fetchDynamicHtml(url);
+      html = cleanHtml(rawHtml);
 
-    console.log("🔍 [Level 2] Executing extractor...");
-    const dynamicData = extractor(html, url);
-    
-    // Merge results from dynamic rendering
-    rawData = {
-      ...rawData,
-      ...dynamicData,
-      html,
-    };
+      console.log("🔍 [Level 2] Executing extractor...");
+      const dynamicData = extractor(html, url);
+      
+      // Merge results from dynamic rendering
+      rawData = {
+        ...rawData,
+        ...dynamicData,
+        html,
+      };
 
-    // If it is a job list or company list, return immediately
-    if (rawData && (rawData.isJobList || rawData.isCompanyList)) {
-      console.log("✅ [Level 2] List extraction successful!");
-      return rawData;
+      // If it is a job list or company list, return immediately
+      if (rawData && (rawData.isJobList || rawData.isCompanyList)) {
+        console.log("✅ [Level 2] List extraction successful!");
+        return rawData;
+      }
+
+      if (rawData.title || rawData.company) {
+        console.log("✅ [Level 2] Dynamic extraction successful!");
+        const normalized = normalizeJobData(rawData);
+        validateJobData(normalized);
+        return normalized;
+      }
+    } catch (err) {
+      console.error(`❌ [Level 2] Browser loading failed: ${err.message}`);
+      lastError = err;
     }
-
-    if (rawData.title || rawData.company) {
-      console.log("✅ [Level 2] Dynamic extraction successful!");
-      const normalized = normalizeJobData(rawData);
-      validateJobData(normalized);
-      return normalized;
-    }
-  } catch (err) {
-    console.error(`❌ [Level 2] Browser loading failed: ${err.message}`);
-    lastError = err;
+  } else {
+    console.log("⏭️ [Level 2] Skipping Playwright fetch for Ambitionbox to prevent Cloudflare timeout hanging.");
   }
 
   // --- Level 3: Generic Meta / JSON-LD Schema Fallback ---

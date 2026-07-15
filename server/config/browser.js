@@ -38,14 +38,23 @@ export async function fetchWithBrowser(url) {
     
     let content = "";
     try {
-      content = await page.content();
+      const contentPromise = page.content();
+      const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve("TIMEOUT"), 5000));
+      const result = await Promise.race([contentPromise, timeoutPromise]);
+      if (result === "TIMEOUT") throw new Error("page.content() timed out");
+      content = result;
     } catch (contentErr) {
       if (contentErr.message.includes("navigating")) {
         console.warn("🔄 Page is still navigating, waiting another 2 seconds to retrieve content safely...");
         await page.waitForTimeout(2000);
-        content = await page.content();
+        const contentPromise2 = page.content();
+        const timeoutPromise2 = new Promise((resolve) => setTimeout(() => resolve("TIMEOUT"), 5000));
+        const result2 = await Promise.race([contentPromise2, timeoutPromise2]);
+        if (result2 === "TIMEOUT") throw new Error("page.content() timed out");
+        content = result2;
       } else {
-        throw contentErr;
+        console.warn(`⚠️ Could not retrieve page content: ${contentErr.message}`);
+        content = ""; // Fallback to empty content so we don't crash
       }
     }
     
@@ -54,8 +63,13 @@ export async function fetchWithBrowser(url) {
     console.error(`❌ Playwright fetch failed for ${url}:`, error.message);
     throw error;
   } finally {
-    if (page) await page.close();
-    if (context) await context.close();
+    const closeWithTimeout = (target) => {
+      const closePromise = target.close().then(() => "CLOSED").catch(() => "ERROR");
+      const timeoutPromise = new Promise(resolve => setTimeout(() => resolve("TIMEOUT"), 2000));
+      return Promise.race([closePromise, timeoutPromise]);
+    };
+    if (page) await closeWithTimeout(page);
+    if (context) await closeWithTimeout(context);
   }
 }
 

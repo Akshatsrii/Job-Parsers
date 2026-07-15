@@ -119,21 +119,21 @@ export default function JobDetailsModal({ isOpen, onClose, job }) {
                   <span className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Salary Package</span>
                   <div className="flex items-center gap-1 text-sm font-bold text-gray-800">
                     <IndianRupee size={15} className="text-emerald-500" />
-                    <span>{details.salary || job?.salary || "Not Disclosed"}</span>
+                    <span>{details.salary && details.salary !== "Not Disclosed" ? details.salary : (job?.salary || "Not Disclosed")}</span>
                   </div>
                 </div>
                 <div className="space-y-1 border-t sm:border-t-0 sm:border-l border-gray-150 pt-3 sm:pt-0 sm:pl-4">
                   <span className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Experience</span>
                   <div className="flex items-center gap-1 text-sm font-semibold text-gray-800">
                     <Briefcase size={15} className="text-blue-500" />
-                    <span>{details.experience || job?.experience || "Not Specified"}</span>
+                    <span>{details.experience && details.experience !== "Not Specified" ? details.experience : (job?.experience || "Not Specified")}</span>
                   </div>
                 </div>
                 <div className="space-y-1 border-t sm:border-t-0 sm:border-l border-gray-150 pt-3 sm:pt-0 sm:pl-4">
                   <span className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Posted Date</span>
                   <div className="flex items-center gap-1 text-sm font-semibold text-gray-800">
                     <Calendar size={15} className="text-orange-500" />
-                    <span>{details.postedDate || job?.postedDate || "Recently"}</span>
+                    <span>{details.postedDate && details.postedDate !== "Not Disclosed" ? details.postedDate : (job?.postedDate || "Not Disclosed")}</span>
                   </div>
                 </div>
               </div>

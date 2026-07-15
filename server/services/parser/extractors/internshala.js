@@ -50,13 +50,19 @@ export function extractInternshala(html, url) {
 
       // Extract duration or experience
       let duration = card.find(".duration, .experience").first().text().trim();
-      if (!duration) {
+      if (!duration || duration.toLowerCase().includes("starts immediately")) {
+        duration = null; // Ignore garbage matches
         card.find(".row-1-item").each((_, rowEl) => {
           const item = $(rowEl);
           if (item.find(".ic-16-calendar").length > 0) {
             duration = item.find("span").first().text().trim() || item.text().trim();
           }
         });
+      }
+      
+      // If we still got garbage, clear it
+      if (duration && duration.toLowerCase().includes("starts immediately")) {
+        duration = null;
       }
       
       // Extract skills
@@ -96,7 +102,14 @@ export function extractInternshala(html, url) {
       const applyUrl = isDetailUrl ? url : (detailPath ? (detailPath.startsWith("http") ? detailPath : `https://internshala.com${detailPath}`) : null);
 
       // Extract posted date
-      const postedDate = card.find(".status-inactive, .posted_by, .status-container, .status-active").first().text().trim();
+      let postedDate = card.find(".status-inactive, .posted_by, .status-container, .status-active").first().text().trim();
+      if (postedDate) {
+        const pLower = postedDate.toLowerCase();
+        if (!pLower.includes("ago") && !pLower.includes("today") && !pLower.includes("yesterday") && !pLower.includes("just now")) {
+          // If it's something like "Actively hiring" or "Recently", ignore it
+          postedDate = null;
+        }
+      }
 
       // Determine workMode
       let workMode = "On-site";

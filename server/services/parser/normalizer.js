@@ -59,8 +59,14 @@ export function normalizeJobData(raw) {
 
   // Normalize experience
   if (experience) {
-    experience = experience.replace(/experience/i, "").trim();
-  } else if (description) {
+    if (experience.toLowerCase().includes("starts immediately")) {
+      experience = ""; // Discard garbage text
+    } else {
+      experience = experience.replace(/experience/i, "").trim();
+    }
+  } 
+  
+  if (!experience && description) {
     // Scrape from description using regex
     experience = extractExperienceFromText(description);
   }
@@ -153,13 +159,13 @@ export function normalizeJobData(raw) {
 
   // Extract email and contact info
   // Initialize email and contact, treating placeholder values as empty
-  let email = raw.email && raw.email !== "Not Disclosed" ? raw.email : "";
+  let email = raw.email && raw.email !== "Not Disclosed" && raw.email.toLowerCase() !== "complaints@internshala.com" ? raw.email : "";
   let contact = raw.contact && raw.contact !== "Not Disclosed" ? raw.contact : "";
 
   // 1. Try to extract from the full original job description text
   if (originalDescription) {
     if (!email) {
-      const emailMatches = extractEmailsFromText(originalDescription);
+      const emailMatches = extractEmailsFromText(originalDescription).filter(e => e.toLowerCase() !== "complaints@internshala.com");
       if (emailMatches.length > 0) {
         email = emailMatches.join(", ");
       }
@@ -180,7 +186,7 @@ export function normalizeJobData(raw) {
       const visibleText = $("body").text();
       
       if (!email) {
-        const emailMatches = extractEmailsFromText(visibleText);
+        const emailMatches = extractEmailsFromText(visibleText).filter(e => e.toLowerCase() !== "complaints@internshala.com");
         if (emailMatches.length > 0) {
           email = emailMatches.join(", ");
         }
@@ -200,6 +206,13 @@ export function normalizeJobData(raw) {
   email = email || "Not Disclosed";
   contact = contact || "Not Disclosed";
 
+  // Retain extra fields from raw data
+  const postedDate = raw.postedDate || null;
+  const applyUrl = raw.applyUrl || null;
+  const workMode = raw.workMode || "On-site";
+  const isJobList = raw.isJobList || false;
+  const isCompanyList = raw.isCompanyList || false;
+
   return {
     title: title || "Job Title Not Found",
     company: company || "Company Name Not Found",
@@ -210,5 +223,10 @@ export function normalizeJobData(raw) {
     description: description || "No Description Provided",
     email,
     contact,
+    postedDate,
+    applyUrl,
+    workMode,
+    ...(isJobList && { isJobList, jobs: raw.jobs }),
+    ...(isCompanyList && { isCompanyList, companies: raw.companies })
   };
 }
