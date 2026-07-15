@@ -152,8 +152,9 @@ export function normalizeJobData(raw) {
     .filter((s, idx, self) => s && self.indexOf(s) === idx); // unique list
 
   // Extract email and contact info
-  let email = raw.email || "";
-  let contact = raw.contact || "";
+  // Initialize email and contact, treating placeholder values as empty
+  let email = raw.email && raw.email !== "Not Disclosed" ? raw.email : "";
+  let contact = raw.contact && raw.contact !== "Not Disclosed" ? raw.contact : "";
 
   // 1. Try to extract from the full original job description text
   if (originalDescription) {

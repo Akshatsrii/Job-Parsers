@@ -114,8 +114,8 @@ export function extractInternshala(html, url) {
           experience: duration || "Not Specified",
           skills,
           description: description || "No Description Provided",
-          email: "Not Disclosed",
-          contact: "Not Disclosed",
+          email: null,
+          contact: null,
           postedDate: postedDate || null,
           applyUrl,
           workMode,
@@ -139,4 +139,3 @@ export function extractInternshala(html, url) {
 
   return extractUsingSelectors(html, "internshala");
 }
-
