@@ -63,6 +63,87 @@ async function limitConcurrency(tasks, limit) {
   return Promise.all(results);
 }
 
+// Background worker function to fetch remaining pages and update DB
+async function fetchPagesInBackgroundDB(jobId, baseUrl, numPages) {
+  try {
+    const urlObj = new URL(baseUrl);
+    let startPage = 1;
+    if (urlObj.searchParams.has("page")) {
+      startPage = parseInt(urlObj.searchParams.get("page")) || 1;
+    }
+
+    for (let i = 1; i < numPages; i++) {
+      const nextPageNum = startPage + i;
+      const pageUrlObj = new URL(baseUrl);
+      pageUrlObj.searchParams.set("page", nextPageNum);
+      const nextPageUrl = pageUrlObj.toString();
+
+      console.log(`🤖 [Background Pagination] Scraping page ${nextPageNum}: ${nextPageUrl}`);
+      try {
+        const nextPageData = await parseJob(nextPageUrl);
+        if (!nextPageData) continue;
+        
+        // Update DB
+        if (nextPageData.isJobList && Array.isArray(nextPageData.jobs) && nextPageData.jobs.length > 0) {
+          await Job.findByIdAndUpdate(jobId, { $push: { jobs: { $each: nextPageData.jobs } } });
+        } else if (nextPageData.isCompanyList && Array.isArray(nextPageData.companies) && nextPageData.companies.length > 0) {
+          await Job.findByIdAndUpdate(jobId, { $push: { companies: { $each: nextPageData.companies } } });
+        }
+        
+        // Add a small delay between requests to avoid getting blocked
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      } catch (err) {
+        console.error(`⚠️ Background Page ${nextPageNum} failed:`, err.message);
+      }
+    }
+    console.log(`✅ [Background Pagination] Completed for Job ID: ${jobId}`);
+  } catch (err) {
+    console.error("⚠️ Background pagination error:", err.message);
+  }
+}
+
+// Background worker function to fetch remaining pages and update in-memory cache
+async function fetchPagesInBackgroundCache(cachedId, baseUrl, numPages) {
+  try {
+    const urlObj = new URL(baseUrl);
+    let startPage = 1;
+    if (urlObj.searchParams.has("page")) {
+      startPage = parseInt(urlObj.searchParams.get("page")) || 1;
+    }
+
+    for (let i = 1; i < numPages; i++) {
+      const nextPageNum = startPage + i;
+      const pageUrlObj = new URL(baseUrl);
+      pageUrlObj.searchParams.set("page", nextPageNum);
+      const nextPageUrl = pageUrlObj.toString();
+
+      console.log(`🤖 [Background Pagination] Scraping page ${nextPageNum}: ${nextPageUrl}`);
+      try {
+        const nextPageData = await parseJob(nextPageUrl);
+        if (!nextPageData) continue;
+        
+        // Update Cache
+        const allCached = getHistoryFromCache();
+        const cachedJob = allCached.find(j => j._id === cachedId);
+        if (cachedJob) {
+          if (nextPageData.isJobList && Array.isArray(nextPageData.jobs) && nextPageData.jobs.length > 0) {
+            cachedJob.jobs = (cachedJob.jobs || []).concat(nextPageData.jobs);
+          } else if (nextPageData.isCompanyList && Array.isArray(nextPageData.companies) && nextPageData.companies.length > 0) {
+            cachedJob.companies = (cachedJob.companies || []).concat(nextPageData.companies);
+          }
+        }
+        
+        // Add a small delay between requests
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      } catch (err) {
+        console.error(`⚠️ Background Page ${nextPageNum} failed:`, err.message);
+      }
+    }
+  } catch (err) {
+    console.error("⚠️ Background pagination error:", err.message);
+  }
+}
+
 export async function parseUrl(req, res, next) {
   const { url, pages = 1 } = req.body;
   console.log("🤖 [Backend parseUrl] Incoming Request Body:", req.body);
@@ -75,47 +156,6 @@ export async function parseUrl(req, res, next) {
 
     // Support paginated scraping for lists (jobs or companies)
     const numPages = Math.min(Math.max(parseInt(pages) || 1, 1), 50);
-    if (numPages > 1 && (jobData.isJobList || jobData.isCompanyList)) {
-      try {
-        const urlObj = new URL(url);
-        let startPage = 1;
-        if (urlObj.searchParams.has("page")) {
-          startPage = parseInt(urlObj.searchParams.get("page")) || 1;
-        }
-
-        const taskFns = [];
-        for (let i = 1; i < numPages; i++) {
-          const nextPageNum = startPage + i;
-          const pageUrlObj = new URL(url);
-          pageUrlObj.searchParams.set("page", nextPageNum);
-          const nextPageUrl = pageUrlObj.toString();
-
-          taskFns.push(async () => {
-            console.log(`🤖 [Pagination] Concurrently scraping page ${nextPageNum}: ${nextPageUrl}`);
-            try {
-              return await parseJob(nextPageUrl);
-            } catch (err) {
-              console.error(`⚠️ Page ${nextPageNum} failed:`, err.message);
-              return null;
-            }
-          });
-        }
-
-        // Run pagination tasks in parallel with a concurrency limit of 5
-        const pagesData = await limitConcurrency(taskFns, 5);
-
-        for (const nextPageData of pagesData) {
-          if (!nextPageData) continue;
-          if (jobData.isJobList && nextPageData.isJobList && Array.isArray(nextPageData.jobs)) {
-            jobData.jobs = jobData.jobs.concat(nextPageData.jobs);
-          } else if (jobData.isCompanyList && nextPageData.isCompanyList && Array.isArray(nextPageData.companies)) {
-            jobData.companies = jobData.companies.concat(nextPageData.companies);
-          }
-        }
-      } catch (paginateError) {
-        console.error("⚠️ Pagination error during scraping:", paginateError.message);
-      }
-    }
 
     // NOTE: Auto-populate is disabled to prevent request timeout on hosted servers.
     // Job details can be fetched on-demand via the 'View Details' button in the frontend.
@@ -153,7 +193,7 @@ export async function parseUrl(req, res, next) {
       sourceUrl: url,
     };
 
-    if (getDBStatus()) {
+      if (getDBStatus()) {
       // Save parsed data to MongoDB
       const job = await Job.create(payload);
 
@@ -170,6 +210,11 @@ export async function parseUrl(req, res, next) {
         ...job.toObject(),
         id: historyItem._id, // match history item deletion ID
       };
+      
+      // Dispatch background pagination if needed
+      if (numPages > 1 && (jobData.isJobList || jobData.isCompanyList)) {
+        fetchPagesInBackgroundDB(job._id, url, numPages);
+      }
 
       return ResponseHelper.success(res, responseData, "Job parsed and saved successfully", 200);
     } else {
@@ -180,6 +225,12 @@ export async function parseUrl(req, res, next) {
         ...cached,
         id: cached._id,
       };
+      
+      // Dispatch background pagination if needed
+      if (numPages > 1 && (jobData.isJobList || jobData.isCompanyList)) {
+        fetchPagesInBackgroundCache(cached._id, url, numPages);
+      }
+      
       return ResponseHelper.success(res, responseData, "Job parsed successfully (in-memory)", 200);
     }
   } catch (error) {
