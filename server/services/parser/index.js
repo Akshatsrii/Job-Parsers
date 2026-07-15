@@ -22,12 +22,13 @@ export async function parseJob(url) {
   let rawData = {};
   let lastError = null;
 
-  // Determine if this platform strictly requires a browser for scraping.
-  // We try Axios (Level 1) first for ALL platforms now, including Internshala list pages.
-  // If Level 1 fails (e.g., 403 from Cloudflare), we fall back to Playwright (Level 2).
-  // This makes hosted deployments (Render, etc.) much faster and more reliable.
-  let requiresBrowser = ["linkedin", "indeed"].includes(platform);
-
+  let requiresBrowser = ["linkedin", "indeed", "internshala"].includes(platform);
+  if (platform === "internshala" && url) {
+    const isDetailUrl = url.toLowerCase().includes("/detail/") || url.toLowerCase().includes("-detail");
+    if (isDetailUrl) {
+      requiresBrowser = false;
+    }
+  }
   // AmbitionBox relies on Cloudflare and blocks scraping — skip Playwright entirely.
   if (platform === "ambitionbox") {
     requiresBrowser = false;
