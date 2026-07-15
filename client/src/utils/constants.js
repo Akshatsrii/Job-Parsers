@@ -1,4 +1,8 @@
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
+let baseUrl = import.meta.env.VITE_API_BASE_URL || "/api";
+if (baseUrl.startsWith("http") && !baseUrl.endsWith("/api")) {
+  baseUrl = baseUrl.replace(/\/$/, "") + "/api";
+}
+export const API_BASE_URL = baseUrl;
 
 export const SUPPORTED_SITES = [
   { name: "Internshala", domain: "internshala.com" },
