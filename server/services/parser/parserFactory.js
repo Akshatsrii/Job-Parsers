@@ -9,29 +9,40 @@ import { extractCompanyCareer } from "./extractors/companyCareer.js";
 import { extractGeneric } from "./extractors/generic.js";
 
 /**
- * Returns the extraction function for the given platform name
+ * Platform → Extractor mapping
  */
-export function getExtractor(platform) {
-  switch (platform) {
-    case "internshala":
-      return extractInternshala;
-    case "ambitionbox":
-      return extractAmbitionBox;
-    case "linkedin":
-      return extractLinkedIn;
-    case "naukri":
-      return extractNaukri;
-    case "indeed":
-      return extractIndeed;
-    case "foundit":
-      return extractFoundit;
-    case "glassdoor":
-      return extractGlassdoor;
-    case "greenhouse":
-    case "lever":
-      return extractCompanyCareer;
-    case "generic":
-    default:
-      return extractGeneric;
-  }
+const extractors = {
+  internshala: extractInternshala,
+  ambitionbox: extractAmbitionBox,
+  linkedin: extractLinkedIn,
+  naukri: extractNaukri,
+  indeed: extractIndeed,
+  foundit: extractFoundit,
+  glassdoor: extractGlassdoor,
+
+  // Company career platforms
+  greenhouse: extractCompanyCareer,
+  lever: extractCompanyCareer,
+};
+
+/**
+ * Returns the correct extraction function
+ * for the detected job platform.
+ *
+ * @param {string} platform
+ * @returns {Function}
+ */
+export function getExtractor(platform = "generic") {
+  const normalizedPlatform = String(platform)
+    .trim()
+    .toLowerCase();
+
+  const extractor =
+    extractors[normalizedPlatform] || extractGeneric;
+
+  console.log(
+    `🔍 Platform: ${normalizedPlatform} → Extractor: ${extractor.name}`
+  );
+
+  return extractor;
 }
