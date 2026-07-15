@@ -9,9 +9,27 @@ import parserRoutes from "./routes/parser.routes.js";
 const app = express();
 
 // Middlewares
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  "https://job-parsers.vercel.app"
+];
+
 app.use(
   cors({
-    origin: ["http://localhost:5173", "http://127.0.0.1:5173"],
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, curl, server-to-server)
+      if (!origin) return callback(null, true);
+      
+      const isAllowed = allowedOrigins.includes(origin) || 
+                        origin.endsWith(".vercel.app");
+                        
+      if (isAllowed) {
+        callback(null, true);
+      } else {
+        callback(null, false); // Block other origins cleanly without throwing uncaught server errors
+      }
+    },
     credentials: true,
   })
 );
