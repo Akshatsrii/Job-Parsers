@@ -21,17 +21,12 @@ export async function parseJob(url) {
   let html = "";
   let rawData = {};
   let lastError = null;
-
-  let requiresBrowser = ["linkedin", "indeed", "internshala"].includes(platform);
+  let requiresBrowser = ["linkedin", "indeed", "internshala", "ambitionbox"].includes(platform);
   if (platform === "internshala" && url) {
     const isDetailUrl = url.toLowerCase().includes("/detail/") || url.toLowerCase().includes("-detail");
     if (isDetailUrl) {
       requiresBrowser = false;
     }
-  }
-  // AmbitionBox relies on Cloudflare and blocks scraping — skip Playwright entirely.
-  if (platform === "ambitionbox") {
-    requiresBrowser = false;
   }
 
   if (!requiresBrowser) {
