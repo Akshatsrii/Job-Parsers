@@ -117,12 +117,12 @@ export async function parseUrl(req, res, next) {
       }
     }
 
-    // Auto-populate details for the jobs in the list (capped at first 20 jobs to prevent Render 30s timeout)
-    if (jobData.isJobList && Array.isArray(jobData.jobs)) {
-      const jobsToPopulate = jobData.jobs.slice(0, 20);
-      console.log(`🤖 [Auto-Scrape] Populating details for first ${jobsToPopulate.length} jobs...`);
-      await populateJobDetails(jobsToPopulate);
-    }
+    // NOTE: Auto-populate is disabled to prevent request timeout on hosted servers.
+    // Job details can be fetched on-demand via the 'View Details' button in the frontend.
+    // if (jobData.isJobList && Array.isArray(jobData.jobs)) {
+    //   const jobsToPopulate = jobData.jobs.slice(0, 20);
+    //   await populateJobDetails(jobsToPopulate);
+    // }
 
     const getSourceName = (u) => {
       const lower = u.toLowerCase();

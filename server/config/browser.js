@@ -30,8 +30,8 @@ export async function fetchWithBrowser(url) {
     
     // Go to URL and wait until page is fully loaded to prevent navigation conflict
     try {
-      await page.goto(url, { waitUntil: "load", timeout: 20000 });
-      await page.waitForTimeout(2000); // Brief pause for scripts to settle
+      await page.goto(url, { waitUntil: "load", timeout: 12000 });
+      await page.waitForTimeout(1000); // Brief pause for scripts to settle
     } catch (err) {
       console.warn(`⚠️ Playwright page.goto timed out: ${err.message}. Proceeding to extract content anyway...`);
     }
@@ -41,8 +41,8 @@ export async function fetchWithBrowser(url) {
       content = await page.content();
     } catch (contentErr) {
       if (contentErr.message.includes("navigating")) {
-        console.warn("🔄 Page is still navigating, waiting another 3 seconds to retrieve content safely...");
-        await page.waitForTimeout(3000);
+        console.warn("🔄 Page is still navigating, waiting another 2 seconds to retrieve content safely...");
+        await page.waitForTimeout(2000);
         content = await page.content();
       } else {
         throw contentErr;
