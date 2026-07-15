@@ -28,15 +28,27 @@ export async function fetchWithBrowser(url) {
     });
     page = await context.newPage();
     
-    // Go to URL and wait until the DOM is loaded
+    // Go to URL and wait until page is fully loaded to prevent navigation conflict
     try {
-      await page.goto(url, { waitUntil: "domcontentloaded", timeout: 15000 });
-      await page.waitForTimeout(1000);
+      await page.goto(url, { waitUntil: "load", timeout: 20000 });
+      await page.waitForTimeout(2000); // Brief pause for scripts to settle
     } catch (err) {
       console.warn(`⚠️ Playwright page.goto timed out: ${err.message}. Proceeding to extract content anyway...`);
     }
     
-    const content = await page.content();
+    let content = "";
+    try {
+      content = await page.content();
+    } catch (contentErr) {
+      if (contentErr.message.includes("navigating")) {
+        console.warn("🔄 Page is still navigating, waiting another 3 seconds to retrieve content safely...");
+        await page.waitForTimeout(3000);
+        content = await page.content();
+      } else {
+        throw contentErr;
+      }
+    }
+    
     return content;
   } catch (error) {
     console.error(`❌ Playwright fetch failed for ${url}:`, error.message);
