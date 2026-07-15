@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/playwright:v1.46.0-jammy
+FROM mcr.microsoft.com/playwright:v1.61.1-jammy
 
 # Set environment variables
 ENV PORT=5000
