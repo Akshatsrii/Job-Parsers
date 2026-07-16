@@ -158,12 +158,16 @@ export function normalizeJobData(raw) {
     .filter((s, idx, self) => s && self.indexOf(s) === idx); // unique list
 
   // Extract email and contact info
-  // Initialize email and contact, treating placeholder values as empty
-  let email = raw.email && raw.email !== "Not Disclosed" && raw.email.toLowerCase() !== "complaints@internshala.com" ? raw.email : "";
-  let contact = raw.contact && raw.contact !== "Not Disclosed" ? raw.contact : "";
+  // null means explicitly "not available" (e.g. listing pages - skip extraction entirely)
+  // empty string means unknown (try to extract from description/html)
+  const emailExplicitlyNull = raw.email === null;
+  const contactExplicitlyNull = raw.contact === null;
+
+  let email = (!emailExplicitlyNull && raw.email && raw.email !== "Not Disclosed" && raw.email.toLowerCase() !== "complaints@internshala.com") ? raw.email : "";
+  let contact = (!contactExplicitlyNull && raw.contact && raw.contact !== "Not Disclosed") ? raw.contact : "";
 
   // 1. Try to extract from the full original job description text
-  if (originalDescription) {
+  if (originalDescription && !emailExplicitlyNull && !contactExplicitlyNull) {
     if (!email) {
       const emailMatches = extractEmailsFromText(originalDescription).filter(e => e.toLowerCase() !== "complaints@internshala.com");
       if (emailMatches.length > 0) {
@@ -179,7 +183,7 @@ export function normalizeJobData(raw) {
   }
 
   // 2. Fallback to scanning overall visible HTML text if not found in the description text
-  if (raw.html && (!email || !contact)) {
+  if (raw.html && !emailExplicitlyNull && !contactExplicitlyNull && (!email || !contact)) {
     try {
       const $ = load(raw.html);
       $("script, style, iframe, noscript, header, footer, nav").remove();
@@ -202,9 +206,9 @@ export function normalizeJobData(raw) {
     }
   }
 
-  // Ensure fallback values
-  email = email || "Not Disclosed";
-  contact = contact || "Not Disclosed";
+  // Ensure fallback values — but only if not explicitly null
+  email = emailExplicitlyNull ? null : (email || null);
+  contact = contactExplicitlyNull ? null : (contact || null);
 
   // Retain extra fields from raw data
   const postedDate = raw.postedDate || null;
@@ -212,6 +216,9 @@ export function normalizeJobData(raw) {
   const workMode = raw.workMode || "On-site";
   const isJobList = raw.isJobList || false;
   const isCompanyList = raw.isCompanyList || false;
+  const employmentType = raw.employmentType || null;
+  const department = raw.department || null;
+  const industry = raw.industry || null;
 
   return {
     title: title || "Job Title Not Found",
@@ -221,11 +228,14 @@ export function normalizeJobData(raw) {
     experience: experience || "Not Specified",
     skills: parsedSkills,
     description: description || "No Description Provided",
-    email,
-    contact,
+    ...(email !== null && { email }),
+    ...(contact !== null && { contact }),
     postedDate,
     applyUrl,
     workMode,
+    ...(employmentType && { employmentType }),
+    ...(department && { department }),
+    ...(industry && { industry }),
     ...(isJobList && { isJobList, jobs: raw.jobs }),
     ...(isCompanyList && { isCompanyList, companies: raw.companies })
   };

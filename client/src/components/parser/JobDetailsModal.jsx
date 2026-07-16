@@ -158,15 +158,15 @@ export default function JobDetailsModal({ isOpen, onClose, job }) {
                 </div>
               )}
 
-              {/* Contact Information */}
-              {(details.email || details.contact) && (
+              {/* Contact Information — only show when real data is available */}
+              {((details.email && details.email !== "Not Disclosed") || (details.contact && details.contact !== "Not Disclosed")) && (
                 <div className="space-y-2">
                   <h3 className="text-xs uppercase font-bold text-gray-400 tracking-wider flex items-center gap-1.5 border-b border-gray-100 pb-2">
                     <Mail size={13} className="text-gray-400" />
                     Company Contact Info
                   </h3>
                   <div className="flex flex-col sm:flex-row gap-x-6 gap-y-2 p-3 border border-gray-150 rounded-xl bg-gray-50/50">
-                    {details.email && details.email !== "Not Disclosed" ? (
+                    {details.email && details.email !== "Not Disclosed" && (
                       <div className="flex items-center gap-2 text-sm text-gray-700">
                         <Mail size={15} className="text-gray-400 shrink-0" />
                         <span className="text-gray-500 mr-1 text-xs">Email:</span>
@@ -174,14 +174,8 @@ export default function JobDetailsModal({ isOpen, onClose, job }) {
                           {details.email}
                         </a>
                       </div>
-                    ) : (
-                      <div className="flex items-center gap-2 text-sm text-gray-400">
-                        <Mail size={15} className="text-gray-300 shrink-0" />
-                        <span className="mr-1 text-xs">Email:</span>
-                        <span>Not Disclosed</span>
-                      </div>
                     )}
-                    {details.contact && details.contact !== "Not Disclosed" ? (
+                    {details.contact && details.contact !== "Not Disclosed" && (
                       <div className="flex items-center gap-2 text-sm text-gray-700 sm:border-l border-gray-200 sm:pl-6">
                         <Phone size={15} className="text-gray-400 shrink-0" />
                         <span className="text-gray-500 mr-1 text-xs">Phone:</span>
@@ -189,16 +183,11 @@ export default function JobDetailsModal({ isOpen, onClose, job }) {
                           {details.contact}
                         </a>
                       </div>
-                    ) : (
-                      <div className="flex items-center gap-2 text-sm text-gray-400 sm:border-l border-gray-200 sm:pl-6">
-                        <Phone size={15} className="text-gray-300 shrink-0" />
-                        <span className="mr-1 text-xs">Phone:</span>
-                        <span>Not Disclosed</span>
-                      </div>
                     )}
                   </div>
                 </div>
               )}
+
 
               {/* Full Description */}
               <div className="space-y-3">

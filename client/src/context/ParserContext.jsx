@@ -84,8 +84,8 @@ export function ParserProvider({ children }) {
             return {
               ...j,
               description: details.description || j.description,
-              email: details.email || j.email || "Not Disclosed",
-              contact: details.contact || j.contact || "Not Disclosed",
+              email: (details.email != null && details.email !== "Not Disclosed") ? details.email : (j.email || null),
+              contact: (details.contact != null && details.contact !== "Not Disclosed") ? details.contact : (j.contact || null),
               skills: details.skills && details.skills.length > 0 ? details.skills : j.skills,
               salary: details.salary && details.salary !== "Not Disclosed" ? details.salary : j.salary,
               experience: details.experience && details.experience !== "Not Specified" ? details.experience : j.experience,

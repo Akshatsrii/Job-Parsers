@@ -2,6 +2,23 @@ import { load } from "cheerio";
 import { extractUsingSelectors } from "../utils.js";
 
 /**
+ * Convert HTML string to clean plain text (strips tags, decodes entities)
+ */
+function htmlToText(html) {
+  if (!html) return "";
+  const $ = load(html);
+  // Replace block elements with newlines for readability
+  $("p, li, br, h1, h2, h3, h4").each((_, el) => {
+    const tag = el.tagName.toLowerCase();
+    if (tag === "li") {
+      $(el).prepend("• ");
+    }
+    $(el).after("\n");
+  });
+  return $.root().text().replace(/\n{3,}/g, "\n\n").trim();
+}
+
+/**
  * Scrapes AmbitionBox company pages or job postings.
  */
 export function extractAmbitionBox(html, url) {
@@ -72,11 +89,74 @@ export function extractAmbitionBox(html, url) {
     };
   }
 
-  const nextDataScript = $("#__NEXT_DATA__");
+  const nextDataScript = $("script#__NEXT_DATA__");
 
   // Determine if it is a single Job Detail Page (JDP) vs search list page
   const isJdp = (url && (url.toLowerCase().includes("-jdp") || url.toLowerCase().includes("/jobs/detail/"))) || 
                 $(".jd-description, .jd-body, .jd-text, .jobDesc, .job-description, [itemprop='description']").length > 0;
+
+  // --- JDP (Job Detail Page): extract full job from initialSelectedJob ---
+  if (isJdp && nextDataScript.length > 0) {
+    try {
+      const parsed = JSON.parse(nextDataScript.html());
+      const selectedJob = parsed?.props?.pageProps?.initialSelectedJob;
+      if (selectedJob) {
+        const minExp = selectedJob.minExp;
+        const maxExp = selectedJob.maxExp;
+        const minCtc = selectedJob.minCtc;
+        const maxCtc = selectedJob.maxCtc;
+
+        let experience = "Not Specified";
+        if (minExp !== undefined && maxExp !== undefined) {
+          experience = `${minExp} - ${maxExp} years`;
+        } else if (minExp !== undefined) {
+          experience = `${minExp}+ years`;
+        }
+
+        let salary = "Not Disclosed";
+        if (!selectedJob.hideCtc) {
+          if (minCtc && maxCtc) {
+            salary = `₹${minCtc / 100000}L - ₹${maxCtc / 100000}L/yr`;
+          } else if (minCtc) {
+            salary = `₹${minCtc / 100000}L/yr`;
+          } else if (maxCtc) {
+            salary = `₹${maxCtc / 100000}L/yr`;
+          }
+        }
+
+        let workMode = "On-site";
+        const wm = String(selectedJob.workMode || "").toLowerCase();
+        if (wm === "remote" || wm === "1" || wm === "wfh") workMode = "Remote";
+        else if (wm === "3" || wm === "hybrid") workMode = "Hybrid";
+
+        // Convert HTML description to readable plain text
+        const rawDesc = selectedJob.description || "";
+        const descriptionText = htmlToText(rawDesc);
+
+        return {
+          title: selectedJob.title || "Job Title Not Found",
+          company: selectedJob.company || selectedJob.shortName || "Company Name Not Found",
+          location: Array.isArray(selectedJob.locations) && selectedJob.locations.length > 0
+            ? selectedJob.locations.join(", ")
+            : "Not Disclosed",
+          salary,
+          experience,
+          skills: Array.isArray(selectedJob.skills) ? selectedJob.skills : [],
+          description: descriptionText || "No description provided.",
+          email: null,
+          contact: null,
+          postedDate: selectedJob.postedOn || null,
+          applyUrl: selectedJob.url || (selectedJob.jdpUrl ? `https://www.ambitionbox.com${selectedJob.jdpUrl}` : null),
+          workMode,
+          employmentType: selectedJob.employmentType || null,
+          department: selectedJob.department?.name || null,
+          industry: selectedJob.industry?.name || null,
+        };
+      }
+    } catch (e) {
+      console.warn("⚠️ [AmbitionBox Extractor] JDP __NEXT_DATA__ parse failed:", e.message);
+    }
+  }
 
   // Check if it is a jobs list page with jobInfoCard elements
   const jobCards = $(".jobInfoCard");
@@ -149,9 +229,9 @@ export function extractAmbitionBox(html, url) {
         salary,
         experience,
         skills,
-        description: "No Description Provided. Click 'View Details' to fetch.",
-        email: "Not Disclosed",
-        contact: "Not Disclosed",
+        description: null,
+        email: null,
+        contact: null,
         postedDate: card.find("span.body-small-l").first().text().trim() || null,
         applyUrl,
         workMode: title.toLowerCase().includes("remote") ? "Remote" : (title.toLowerCase().includes("hybrid") ? "Hybrid" : "On-site")
@@ -207,9 +287,9 @@ export function extractAmbitionBox(html, url) {
             salary,
             experience,
             skills: Array.isArray(job.skills) ? job.skills : [],
-            description: "No Description Provided. Click 'View Details' to fetch.",
-            email: "Not Disclosed",
-            contact: "Not Disclosed",
+            description: null,
+            email: null,
+            contact: null,
             postedDate: job.postedOn || null,
             applyUrl: job.jdpUrl ? `https://www.ambitionbox.com${job.jdpUrl}` : null,
             workMode,
