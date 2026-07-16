@@ -1,14 +1,24 @@
 import { chromium } from "playwright";
+import { PROXY_URL } from "./env.js";
 
 let browserInstance = null;
 
 export async function getBrowser() {
   if (browserInstance) return browserInstance;
   try {
-    browserInstance = await chromium.launch({
+    const launchOptions = {
       headless: true,
       args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage", "--disable-blink-features=AutomationControlled", "--disable-http2"],
-    });
+    };
+    
+    if (PROXY_URL) {
+      launchOptions.proxy = {
+        server: PROXY_URL
+      };
+      console.log(`🌐 [Playwright] Configured browser proxy server: ${PROXY_URL}`);
+    }
+
+    browserInstance = await chromium.launch(launchOptions);
     return browserInstance;
   } catch (error) {
     console.error("❌ Failed to launch Playwright browser:", error.message);
