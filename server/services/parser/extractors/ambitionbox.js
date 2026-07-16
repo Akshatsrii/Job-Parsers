@@ -78,6 +78,92 @@ export function extractAmbitionBox(html, url) {
   const isJdp = (url && (url.toLowerCase().includes("-jdp") || url.toLowerCase().includes("/jobs/detail/"))) || 
                 $(".jd-description, .jd-body, .jd-text, .jobDesc, .job-description, [itemprop='description']").length > 0;
 
+  // Check if it is a jobs list page with jobInfoCard elements
+  const jobCards = $(".jobInfoCard");
+  if (!isJdp && jobCards.length > 0) {
+    const jobs = [];
+    // Get company name from page header if possible
+    let companyHeader = $("h1").first().text().replace(/jobs/i, "").trim() || "AmbitionBox";
+    if (companyHeader.toLowerCase().includes("retail")) {
+      // Clean up company name, e.g. "100+ Reliance Retail Jobs" -> "Reliance Retail"
+      const match = companyHeader.match(/(\d+\+\s*)?([A-Za-z\s]+?)\s*Jobs/i);
+      if (match && match[2]) {
+        companyHeader = match[2].trim();
+      }
+    }
+
+    jobCards.each((_, el) => {
+      const card = $(el);
+      const titleLink = card.find("a.title, [class*='title']").first();
+      const title = titleLink.text().trim() || card.attr("title") || "Job Title Not Found";
+      let applyUrl = titleLink.attr("href") || null;
+      if (applyUrl && !applyUrl.startsWith("http")) {
+        applyUrl = `https://www.ambitionbox.com${applyUrl}`;
+      }
+
+      // Parse entities (Experience, Salary, Skills, etc.)
+      const entities = card.find(".entity");
+      let experience = "Not Specified";
+      let salary = "Not Disclosed";
+      const skills = [];
+      let location = "Not Disclosed";
+
+      entities.each((_, entityEl) => {
+        const entity = $(entityEl);
+        const titleAttr = entity.attr("title") || "";
+
+        if (entity.find("i.icon-work, .icon-work").length > 0 || titleAttr.toLowerCase().includes("years") || titleAttr.toLowerCase().includes("exp")) {
+          experience = titleAttr.trim() || entity.text().trim();
+        } else if (entity.find("img[src*='payments.svg']").length > 0 || entity.find(".entity-salary-text").length > 0 || titleAttr.toLowerCase().includes("/yr") || titleAttr.toLowerCase().includes("/mo")) {
+          salary = titleAttr.trim() || entity.find(".entity-salary-text").text().trim() || entity.text().trim();
+        } else if (entity.find("img[data-src*='bolt.svg']").length > 0 || entity.find("img[src*='bolt.svg']").length > 0 || entity.find(".icon-bolt").length > 0) {
+          const skillsList = titleAttr.split(",").map(s => s.trim()).filter(Boolean);
+          if (skillsList.length > 0) {
+            skills.push(...skillsList);
+          } else {
+            const skillText = entity.text().trim();
+            if (skillText) skills.push(skillText);
+          }
+        }
+      });
+
+      // Try to find location from card text
+      const locText = card.find(".loc, .location, [class*='location']").first().text().trim();
+      if (locText) {
+        location = locText;
+      } else {
+        // Fallback: try to extract location from title (e.g. "Store manager - Bangalore")
+        const parts = title.split(" - ");
+        if (parts.length > 1) {
+          const possibleLoc = parts[parts.length - 1].trim();
+          if (/bangalore|mumbai|kolkata|delhi|noida|gurugram|chennai|hyderabad|pune/i.test(possibleLoc)) {
+            location = possibleLoc;
+          }
+        }
+      }
+
+      jobs.push({
+        title,
+        company: companyHeader,
+        location,
+        salary,
+        experience,
+        skills,
+        description: "No Description Provided. Click 'View Details' to fetch.",
+        email: "Not Disclosed",
+        contact: "Not Disclosed",
+        postedDate: card.find("span.body-small-l").first().text().trim() || null,
+        applyUrl,
+        workMode: title.toLowerCase().includes("remote") ? "Remote" : (title.toLowerCase().includes("hybrid") ? "Hybrid" : "On-site")
+      });
+    });
+
+    return {
+      isJobList: true,
+      jobs: jobs
+    };
+  }
+
   if (!isJdp && nextDataScript.length > 0) {
     try {
       const parsed = JSON.parse(nextDataScript.html());

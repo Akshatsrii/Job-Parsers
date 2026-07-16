@@ -5,7 +5,7 @@ let baseUrl = import.meta.env.PROD
   ? "https://job-parsers-2.onrender.com/api" 
   : "/api";
 
-if (envUrl && !envUrl.includes("localhost") && !envUrl.includes("127.0.0.1")) {
+if (envUrl) {
   baseUrl = envUrl.replace(/\/$/, "");
   if (!baseUrl.endsWith("/api")) baseUrl += "/api";
 }

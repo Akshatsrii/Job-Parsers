@@ -1,0 +1,10 @@
+node_modules
+dist
+.env
+.gitignore
+.git
+.github
+*.log
+.oxlintrc.json
+Dockerfile
+nginx.conf
