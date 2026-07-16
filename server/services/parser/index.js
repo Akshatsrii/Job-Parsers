@@ -127,9 +127,15 @@ export async function parseJob(url) {
   }
 
   // If all levels fail, throw a detailed error
-  if (lastError && lastError.message.includes("Playwright browser instance unavailable")) {
+  if (lastError && (
+    lastError.message.includes("Playwright browser instance unavailable") ||
+    lastError.message.includes("timeout of") ||
+    lastError.message.includes("status code 403") ||
+    lastError.message.includes("status code 503") ||
+    lastError.message.includes("Failed to fetch page content")
+  )) {
     throw new Error(
-      "This page is protected by Cloudflare bot protection. Since the headless browser is not installed on the hosted server, we cannot scrape it. Please run the app locally with Playwright installed, or paste the job description/HTML directly."
+      "This request timed out or was blocked by Cloudflare bot protection. Hosting servers (like Render or AWS) are often blocked by job boards. Please run the app locally, configure a proxy, or paste the job description/HTML directly."
     );
   }
 
